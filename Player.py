@@ -20,7 +20,7 @@ class Player :
         # 플레이어 기본 위치, 속도 설정
         self.x = self.map_width // 2
         self.y = self.map_height // 2
-        self.speed = 2
+        self.speed = 3
 
         # 플레이어 히트박스(사각형)
         self.rect = pygame.Rect(self.x, self.y, self.size, self.size)   #사각형 생성 함수
@@ -33,20 +33,27 @@ class Player :
 
         # 직선 이동
         if (keys[pygame.K_a]):
-            self.x = self.x - self.speed                # 플레이어 속도만큼 위치값변경
-            self.snowman_img = self.snowman_img_original        
+            if (self.x > 0):                  # 플레이어가 맵 밖으로 나가지 못하게 제어
+                self.x = self.x - self.speed                # 플레이어 속도만큼 위치값변경
+                self.snowman_img = self.snowman_img_original        
         if (keys[pygame.K_d]):
-            self.x = self.x + self.speed
-            self.snowman_img = self.snowman_img_flipped     #a, d 입력 시 이미지를 좌우반전시켜 보는 방향을 연출
+            if (self.x < self.map_width - self.size):
+                self.x = self.x + self.speed
+                self.snowman_img = self.snowman_img_flipped     #a, d 입력 시 이미지를 좌우반전시켜 보는 방향을 연출
         if (keys[pygame.K_w]):
-            self.y = self.y - self.speed
+            if (self.y > 0):    
+                self.y = self.y - self.speed
         if (keys[pygame.K_s]):
-            self.y = self.y + self.speed
+            if (self.y < self.map_height - self.size):
+                self.y = self.y + self.speed
             
     # 히트박스 = 플레이어 모습과 같이 이동하게 같은 좌표로 설정
         self.rect.x = self.x
         self.rect.y = self.y
 
     # 플레이어 화면에 띄우기
-    def draw(self, screen):
-        screen.blit(self.snowman_img, (self.x, self.y))
+    def draw(self, screen, offset_x, offset_y):
+        draw_x = self.x - offset_x
+        draw_y = self.y - offset_y
+
+        screen.blit(self.snowman_img, (draw_x, draw_y))

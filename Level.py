@@ -10,7 +10,7 @@ class Level :
         self.level = 0
 
     # 레벨 메소드
-    def Level(self, ) :
+    def Level(self, monster_isDead) :
 
         # 몬스터 죽음 체크, 경험치 전달
         if (monster_isDead == True):
