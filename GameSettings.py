@@ -10,7 +10,7 @@ MAP_WIDTH = 3200
 MAP_HEIGHT = 1800
 
 # FPS 설정
-FPS = 60
+FPS = 120
 
 #컬러
 BLACK = (0, 0, 0)
