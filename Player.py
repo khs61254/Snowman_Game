@@ -4,6 +4,11 @@ from Bullet import Bullet
 
 
 class Player :
+
+    default_speed = 1.5
+    default_hp = 100
+    default_maxhp = 100
+
     # 플레이어 클래스 초기화(생성자)
     def __init__(self, map_width, map_height) :
 
@@ -19,9 +24,9 @@ class Player :
         self.map_height = map_height
 
         # 플레이어 속성
-        self.speed = 1.5
-        self.hp = 100
-        self.maxhp = 100
+        self.speed = Player.default_speed
+        self.hp = Player.default_hp
+        self.maxhp = Player.default_maxhp
 
         # 플레이어 무적
         self.isInv = False  #무적 상태 확인

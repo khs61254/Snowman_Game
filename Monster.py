@@ -9,8 +9,11 @@ class Monster :
     def __init__(self, x, y):
         # 몬스터 이미지 로드
         self.size = 100
+        self.dead_size = 60
         self.sangblin_img = pygame.image.load("resource/images/sangblin.png")
         self.sangblin_img = pygame.transform.scale(self.sangblin_img, (self.size, self.size))
+        self.sangblinDead_img = pygame.image.load("resource/images/sangblin_dead.png")
+        self.sangblinDead_img = pygame.transform.scale(self.sangblinDead_img, (self.dead_size, self.dead_size))
 
         # 몬스터 속성
         self.hp = Monster.default_hp
@@ -24,6 +27,10 @@ class Monster :
 
         # 몬스터 히트박스
         self.rect = pygame.Rect(int(self.x), int(self.y), self.size, self.size)
+
+        # 상태 관리 변수
+        self.isDead = False
+        self.death_time = 0
 
     # 몬스터 움직임
     def monster_chase(self, player):
@@ -51,12 +58,19 @@ class Monster :
         self.rect.x = int(self.x)
         self.rect.y = int(self.y)
 
+    # 몬스터가 받는 데미지
     def monster_takeDamage(self, bullet_damage):
         
         self.hp -= bullet_damage
 
+    # 몬스터 그리기
     def monster_draw(self, screen, offset_x, offset_y):
         draw_x = self.rect.x - offset_x
         draw_y = self.rect.y - offset_y
 
-        screen.blit(self.sangblin_img, (draw_x, draw_y))
+        #죽었다면 시체 이미지 그리기
+        if self.isDead :
+            screen.blit(self.sangblinDead_img, (draw_x, draw_y))
+        
+        else :
+            screen.blit(self.sangblin_img, (draw_x, draw_y))

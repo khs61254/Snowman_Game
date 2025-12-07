@@ -121,22 +121,13 @@ while run:
 
         # 플레이어 슈팅 함수 호출
         player.player_shooting(bullets_list)
-
+        
         # 플레이어 시점 고정(중앙 고정)
         center_x = player.x + (player.size // 2)
         center_y = player.y + (player.size // 2)
         offset_x = center_x - (GameSettings.SCREEN_WIDTH // 2)
         offset_y = center_y - (GameSettings.SCREEN_HEIGHT // 2)
         
-        # 플레이어 그리기
-        player.player_draw(screen, offset_x, offset_y)
-
-        # 레벨 UI 그리기
-        level.level_draw(screen)
-
-        # 플레이어 체력 UI 그리기
-        player.player_hp_draw(screen)
-
         # 게임 진행 중 타이머 그리기
         display_text = timer_font.render(timer_text, True, (GameSettings.BLACK))
         timer_rect = display_text.get_rect(center=(GameSettings.SCREEN_WIDTH // 2, 50))
@@ -148,6 +139,16 @@ while run:
             monsters_list.append(Monster(spawn_x, spawn_y)) #스폰 포지션 값을 받아와서, 몬스터 리스트에 추가
             monster_spawn_timer = current_time  #그 후 스폰타이머를 현재시간으로 초기화
 
+        # 몬스터 업데이트, 그리기, 몬스터/플레이어 충돌
+        for monster in monsters_list[:]:
+            #죽은 몬스터 관리
+            if monster.isDead :
+                monster.monster_draw(screen, offset_x, offset_y)
+
+                current_time = pygame.time.get_ticks()
+                if current_time - monster.death_time > 3000:
+                    monsters_list.remove(monster)
+
         # 총알 업데이트, 그리기
         for bullet in bullets_list[:]:
             bullet.bullet_update()
@@ -157,32 +158,45 @@ while run:
             else:
                 bullet.bullet_draw(screen, offset_x, offset_y)
 
-        # 몬스터 업데이트, 그리기, 몬스터/플레이어 충돌
         for monster in monsters_list[:]:
-            monster.monster_chase(player)
-            monster.monster_draw(screen, offset_x, offset_y)
+            # 산 몬스터 관리
+            if not monster.isDead:
+                monster.monster_chase(player)
+                monster.monster_draw(screen, offset_x, offset_y)
 
-            # 몬스터의 히트박스가 플레이어와 닿았다면 데미지
-            if player.rect.colliderect(monster.rect):   # 사각형(히트 박스)의 충돌 감지 함수
-                player.take_damage(monster.damage)
+                # 몬스터의 히트박스가 플레이어와 닿았다면 데미지
+                if player.rect.colliderect(monster.rect):   # 사각형(히트 박스)의 충돌 감지 함수
+                    player.take_damage(monster.damage)
 
-            #몬스터, 플레이어 충돌과 몬스터, 총알 충돌을 같이 하기 위해 이중 for문 사용 (AI도움)
-            for bullet in bullets_list[:]:
-                # bullet 히트박스가 몬스터와 닿았다면 몬스터에게 데미지, 닿은 총알은 삭제
-                if monster.rect.colliderect(bullet.rect):
-                    monster.monster_takeDamage(bullet.damage)
-                    bullets_list.remove(bullet)
+                #몬스터, 플레이어 충돌과 몬스터, 총알 충돌을 같이 하기 위해 이중 for문 사용 (AI도움)
+                for bullet in bullets_list[:]:
+                    # bullet 히트박스가 몬스터와 닿았다면 몬스터에게 데미지, 닿은 총알은 삭제
+                    if monster.rect.colliderect(bullet.rect):
+                        monster.monster_takeDamage(bullet.damage)
+                        bullets_list.remove(bullet)
 
-                    # 몬스터의 사망 확인, 경험치
-                    if monster.hp <= 0 :
-                        level.gain_exp(monster.exp)
-                        monsters_list.remove(monster)
-                        break
+                        # 몬스터의 사망 확인, 경험치
+                        if monster.hp <= 0 :
+                            level.gain_exp(monster.exp)
+                            monster.isDead = True
+                            monster.death_time = pygame.time.get_ticks()
+                            break
+
         # 플레이어 사망 체크
         if player.hp <= 0:
             if not game_over:   # 게임 오버 상태가 되기 전에
                 final_time = timer_text # 마지막 시간을 체크
                 game_over = True
+
+    # 플레이어 그리기
+    player.player_draw(screen, offset_x, offset_y)
+
+    # 레벨 UI 그리기
+    level.level_draw(screen)
+
+    # 플레이어 체력 UI 그리기
+    player.player_hp_draw(screen)
+
 
 
     # 게임 오버(플레이어 사망시)
