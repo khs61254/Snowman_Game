@@ -1,9 +1,11 @@
 import pygame
-import math
-from Bullet import Bullet
-
 
 class Monster :
+    default_hp = 30
+    default_speed = 1
+    default_damage = 20
+    default_exp = 20
+
     def __init__(self, x, y):
         # 몬스터 이미지 로드
         self.size = 100
@@ -11,11 +13,10 @@ class Monster :
         self.sangblin_img = pygame.transform.scale(self.sangblin_img, (self.size, self.size))
 
         # 몬스터 속성
-        self.hp = 30
-        self.speed = 1
-        self.damage = 20
-        self.isDead = False
-        self.exp = 20       #몬스터의 경험치량
+        self.hp = Monster.default_hp
+        self.speed = Monster.default_speed
+        self.damage = Monster.default_damage
+        self.exp = Monster.default_exp       #몬스터의 경험치량
 
         # 몬스터 위치
         self.x = float(x)

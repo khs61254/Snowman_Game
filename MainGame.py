@@ -59,9 +59,19 @@ def get_spawn_position(player, map_width, map_height):
         if distance > safe_radius:
             return x, y
 
-# 게임 오버, 폰트
+# 폰트
 game_font = pygame.font.SysFont("consolas", 60, True)
 sub_font = pygame.font.SysFont("malgungothic", 30)
+timer_font = pygame.font.SysFont("malgungothic", 50, True)
+
+# 생존 시간 타이머 변수
+start_time = pygame.time.get_ticks()
+final_time = ""
+
+# 난이도 조절 변수
+difficult_trigger = False
+
+#게임 오버 확인
 game_over = False
 
 # 메인 게임 루프
@@ -72,7 +82,6 @@ while run:
         if event.type == pygame.QUIT :       # 창 닫기 버튼을 누르면 종료  
             run = False
 
-        
         if event.type == pygame.MOUSEBUTTONDOWN:
             run = False
 
@@ -84,6 +93,25 @@ while run:
     if not game_over:
         # 현재 시간 저장
         current_time = pygame.time.get_ticks()
+
+        # 생존 시간 타이머(흐른 시간 저장)
+        elapsed_time = pygame.time.get_ticks() - start_time
+        elapsed_seconds = (elapsed_time // 1000) % 60
+        elapsed_minutes = (elapsed_time // 1000) // 60
+        
+        # 문자열 포맷 02d - 두 자리 숫자로 채우기
+        timer_text = f"{elapsed_minutes:02d}:{elapsed_seconds:02d}"
+
+        # 2분 뒤 몬스터가 강해지게 설정
+        if elapsed_time >= 120000 and not difficult_trigger:
+            difficult_trigger = True
+
+            # 클래스 속성 자체를 변화(앞으로 나오는 몬스터 전부 적용)
+            Monster.default_hp = 50
+            Monster.default_speed = 1.5
+            Monster.default_damage = 30
+            Monster.default_exp = 30
+            monster_spawn_delay = 2500
 
         # 플레이어 움직임 함수 호출
         player.player_move()
@@ -109,6 +137,10 @@ while run:
         # 플레이어 체력 UI 그리기
         player.player_hp_draw(screen)
 
+        # 게임 진행 중 타이머 그리기
+        display_text = timer_font.render(timer_text, True, (GameSettings.BLACK))
+        timer_rect = display_text.get_rect(center=(GameSettings.SCREEN_WIDTH // 2, 50))
+        screen.blit(display_text, timer_rect)
 
         # 몬스터 스폰 로직
         if current_time - monster_spawn_timer > monster_spawn_delay:    # 몬스터 스폰 딜레이가 끝났다면
@@ -148,7 +180,9 @@ while run:
                         break
         # 플레이어 사망 체크
         if player.hp <= 0:
-            game_over = True
+            if not game_over:   # 게임 오버 상태가 되기 전에
+                final_time = timer_text # 마지막 시간을 체크
+                game_over = True
 
 
     # 게임 오버(플레이어 사망시)
@@ -163,14 +197,17 @@ while run:
         # 텍스트 생성
         text_big = game_font.render("GAME OVER", True, (GameSettings.WHITE))
         text_small = sub_font.render("아무 곳이나 클릭해서 종료", True, (120, 120, 120))
+        display_text = timer_font.render(f"생존 시간: {final_time}", True, (GameSettings.RED))
 
         # 텍스트 위치
         rect_big = text_big.get_rect(center=(GameSettings.SCREEN_WIDTH // 2, GameSettings.SCREEN_HEIGHT // 2 - 40))
         rect_small = text_small.get_rect(center=(GameSettings.SCREEN_WIDTH // 2, GameSettings.SCREEN_HEIGHT // 2 + 40))
+        timer_rect = display_text.get_rect(center=(GameSettings.SCREEN_WIDTH // 2, 50))
 
         # 화면에 글자 그리기
         screen.blit(text_big, rect_big)
         screen.blit(text_small, rect_small)
+        screen.blit(display_text, timer_rect)
 
     # 화면 업데이트
     pygame.display.flip()
