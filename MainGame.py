@@ -55,6 +55,11 @@ def get_spawn_position(player, map_width, map_height):
         if distance > safe_radius:
             return x, y
 
+# 게임 오버, 폰트
+game_font = pygame.font.SysFont("consolas", 60, True)
+sub_font = pygame.font.SysFont("malgungothic", 30)
+game_over = False
+
 # 메인 게임 루프
 run = True
 while run:
@@ -63,71 +68,97 @@ while run:
         if event.type == pygame.QUIT :       # 창 닫기 버튼을 누르면 종료  
             run = False
 
-    # 현재 시간 저장
-    current_time = pygame.time.get_ticks()
+        
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            run = False
 
-    # 플레이어 움직임 함수 호출
-    player.player_move()
-
-    # 플레이어 상태(무적 시간) 함수 호출
-    player.update_status()
-
-    # 플레이어 슈팅 함수 호출
-    player.player_shooting(bullets_list)
-
-    # 플레이어 시점 고정(중앙 고정)
-    center_x = player.x + (player.size // 2)
-    center_y = player.y + (player.size // 2)
-    offset_x = center_x - (GameSettings.SCREEN_WIDTH // 2)
-    offset_y = center_y - (GameSettings.SCREEN_HEIGHT // 2)
-
-    # 몬스터 스폰 로직
-    if current_time - monster_spawn_timer > monster_spawn_delay:    # 몬스터 스폰 딜레이가 끝났다면
-        spawn_x, spawn_y = get_spawn_position(player, GameSettings.MAP_WIDTH, GameSettings.MAP_HEIGHT)
-        monsters_list.append(Monster(spawn_x, spawn_y)) #스폰 포지션 값을 받아와서, 몬스터 리스트에 추가
-        monster_spawn_timer = current_time  #그 후 스폰타이머를 현재시간으로 초기화
-
-    # 맵 그리기()
+    # 맵 그리기
     screen.fill(GameSettings.BLACK)
     screen.blit(map_img, (0 - offset_x, 0 - offset_y))
 
-    # 총알 업데이트, 그리기
-    for bullet in bullets_list[:]:
-        bullet.bullet_update()
+    # 게임 진행중
+    if not game_over:
+        # 현재 시간 저장
+        current_time = pygame.time.get_ticks()
 
-        if bullet.duration <= 0:
-            bullets_list.remove(bullet)
-        else:
-            bullet.bullet_draw(screen, offset_x, offset_y)
+        # 플레이어 움직임 함수 호출
+        player.player_move()
 
-    # 몬스터 업데이트, 그리기, 몬스터/플레이어 충돌
-    for monster in monsters_list[:]:
-        monster.monster_chase(player)
-        monster.monster_draw(screen, offset_x, offset_y)
+        # 플레이어 상태(무적 시간) 함수 호출
+        player.update_status()
 
-        # 몬스터의 히트박스가 플레이어와 닿았다면 데미지
-        if player.rect.colliderect(monster.rect):   # 사각형(히트 박스)의 충돌 감지 함수
-            player.take_damage(monster.damage)
+        # 플레이어 슈팅 함수 호출
+        player.player_shooting(bullets_list)
 
-        #몬스터, 플레이어 충돌과 몬스터, 총알 충돌을 같이 하기 위해 이중 for문 사용 (AI도움)
-        for bullet in bullets_list[:]:
-            # bullet 히트박스가 몬스터와 닿았다면 몬스터에게 데미지, 닿은 총알은 삭제
-            if monster.rect.colliderect(bullet.rect):
-                monster.monster_takeDamage(bullet.damage)
-                bullets_list.remove(bullet)
-
-                # 몬스터의 체력이 0이 되면 몬스터 리스트에서 삭제 후 빠져나감(아니면 몬스터 유지)
-                if monster.hp <= 0 :
-                    monsters_list.remove(monster)   
-                    break
+        # 플레이어 시점 고정(중앙 고정)
+        center_x = player.x + (player.size // 2)
+        center_y = player.y + (player.size // 2)
+        offset_x = center_x - (GameSettings.SCREEN_WIDTH // 2)
+        offset_y = center_y - (GameSettings.SCREEN_HEIGHT // 2)
         
-    if player.hp <= 0 :     # 플레이어 체력이 0이 되면 게임 오버
-        run = False
+        # 플레이어 그리기
+        player.player_draw(screen, offset_x, offset_y)
+
+        # 몬스터 스폰 로직
+        if current_time - monster_spawn_timer > monster_spawn_delay:    # 몬스터 스폰 딜레이가 끝났다면
+            spawn_x, spawn_y = get_spawn_position(player, GameSettings.MAP_WIDTH, GameSettings.MAP_HEIGHT)
+            monsters_list.append(Monster(spawn_x, spawn_y)) #스폰 포지션 값을 받아와서, 몬스터 리스트에 추가
+            monster_spawn_timer = current_time  #그 후 스폰타이머를 현재시간으로 초기화
+
+        # 총알 업데이트, 그리기
+        for bullet in bullets_list[:]:
+            bullet.bullet_update()
+
+            if bullet.duration <= 0:
+                bullets_list.remove(bullet)
+            else:
+                bullet.bullet_draw(screen, offset_x, offset_y)
+
+        # 몬스터 업데이트, 그리기, 몬스터/플레이어 충돌
+        for monster in monsters_list[:]:
+            monster.monster_chase(player)
+            monster.monster_draw(screen, offset_x, offset_y)
+
+            # 몬스터의 히트박스가 플레이어와 닿았다면 데미지
+            if player.rect.colliderect(monster.rect):   # 사각형(히트 박스)의 충돌 감지 함수
+                player.take_damage(monster.damage)
+
+            #몬스터, 플레이어 충돌과 몬스터, 총알 충돌을 같이 하기 위해 이중 for문 사용 (AI도움)
+            for bullet in bullets_list[:]:
+                # bullet 히트박스가 몬스터와 닿았다면 몬스터에게 데미지, 닿은 총알은 삭제
+                if monster.rect.colliderect(bullet.rect):
+                    monster.monster_takeDamage(bullet.damage)
+                    bullets_list.remove(bullet)
+
+                    # 몬스터의 체력이 0이 되면 몬스터 리스트에서 삭제 후 빠져나감(아니면 몬스터 유지)
+                    if monster.hp <= 0 :
+                        monsters_list.remove(monster)   
+                        break
+        # 플레이어 사망 체크
+        if player.hp <= 0:
+            game_over = True
 
 
+    # 게임 오버(플레이어 사망시)
+    if game_over:
 
-    # 플레이어 그리기
-    player.player_draw(screen, offset_x, offset_y)
+        # 반투명한 검은색 배경 덮기
+        overlay = pygame.Surface((GameSettings.SCREEN_WIDTH, GameSettings.SCREEN_HEIGHT))
+        overlay.set_alpha(180) # 투명도
+        overlay.fill((0, 0, 0))
+        screen.blit(overlay, (0, 0))
+
+        # 텍스트 생성
+        text_big = game_font.render("GAME OVER", True, (GameSettings.WHITE))
+        text_small = sub_font.render("아무 곳이나 클릭해서 종료", True, (120, 120, 120))
+
+        # 텍스트 위치
+        rect_big = text_big.get_rect(center=(GameSettings.SCREEN_WIDTH // 2, GameSettings.SCREEN_HEIGHT // 2 - 40))
+        rect_small = text_small.get_rect(center=(GameSettings.SCREEN_WIDTH // 2, GameSettings.SCREEN_HEIGHT // 2 + 40))
+
+        # 화면에 글자 그리기
+        screen.blit(text_big, rect_big)
+        screen.blit(text_small, rect_small)
 
     # 화면 업데이트
     pygame.display.flip()
