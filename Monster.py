@@ -15,6 +15,7 @@ class Monster :
         self.speed = 1
         self.damage = 20
         self.isDead = False
+        self.exp = 20       #몬스터의 경험치량
 
         # 몬스터 위치
         self.x = float(x)
@@ -58,8 +59,3 @@ class Monster :
         draw_y = self.rect.y - offset_y
 
         screen.blit(self.sangblin_img, (draw_x, draw_y))
-
-    # 몬스터 사망 확인
-    def monster_isDead(self):
-        if self.hp <= 0 :
-            self.isDead = True

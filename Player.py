@@ -1,4 +1,5 @@
 import pygame
+import GameSettings
 from Bullet import Bullet
 
 
@@ -38,6 +39,9 @@ class Player :
         # 총알 쿨다운 설정
         self.last_shot_time = 0
         self.shoot_cooldown = 800
+
+        # 폰트
+        self.font = pygame.font.SysFont("malgungothic", 1, True)
 
 
     # 플레이어 움직임
@@ -138,3 +142,14 @@ class Player :
 
             if current_time - self.inv_start_time > self.inv_duration:
                 self.isInv = False
+
+    # 체력바 UI
+    def player_hp_draw(self, screen):
+
+        # 총 체력 바
+        pygame.draw.rect(screen, (100, 100, 100), (30, 820, 450, 30))
+
+        # 현재 체력 바
+        ratio = self.hp / self.maxhp
+        fill_width = int(450 * ratio)
+        pygame.draw.rect(screen, (GameSettings.RED), (30, 820, fill_width, 30))

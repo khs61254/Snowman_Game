@@ -5,6 +5,7 @@ import math
 import GameSettings
 from Player import Player           # Player 파일의 Player 클래스 가져오기
 from Monster import Monster
+from Level import Level
 
 # 설정 초기화
 pygame.init()
@@ -19,6 +20,9 @@ map_img = pygame.transform.scale(map_img, (GameSettings.MAP_WIDTH, GameSettings.
 
 # 플레이어 객체 생성
 player = Player(GameSettings.MAP_WIDTH, GameSettings.MAP_HEIGHT)
+
+# 레벨 객체 생성
+level = Level(player)
 
 # 오프셋(시작위치) 초기화
 offset_x = 0
@@ -99,6 +103,13 @@ while run:
         # 플레이어 그리기
         player.player_draw(screen, offset_x, offset_y)
 
+        # 레벨 UI 그리기
+        level.level_draw(screen)
+
+        # 플레이어 체력 UI 그리기
+        player.player_hp_draw(screen)
+
+
         # 몬스터 스폰 로직
         if current_time - monster_spawn_timer > monster_spawn_delay:    # 몬스터 스폰 딜레이가 끝났다면
             spawn_x, spawn_y = get_spawn_position(player, GameSettings.MAP_WIDTH, GameSettings.MAP_HEIGHT)
@@ -130,9 +141,10 @@ while run:
                     monster.monster_takeDamage(bullet.damage)
                     bullets_list.remove(bullet)
 
-                    # 몬스터의 체력이 0이 되면 몬스터 리스트에서 삭제 후 빠져나감(아니면 몬스터 유지)
+                    # 몬스터의 사망 확인, 경험치
                     if monster.hp <= 0 :
-                        monsters_list.remove(monster)   
+                        level.gain_exp(monster.exp)
+                        monsters_list.remove(monster)
                         break
         # 플레이어 사망 체크
         if player.hp <= 0:
@@ -142,7 +154,7 @@ while run:
     # 게임 오버(플레이어 사망시)
     if game_over:
 
-        # 반투명한 검은색 배경 덮기
+        # 반투명 검은색 배경 덮기
         overlay = pygame.Surface((GameSettings.SCREEN_WIDTH, GameSettings.SCREEN_HEIGHT))
         overlay.set_alpha(180) # 투명도
         overlay.fill((0, 0, 0))
