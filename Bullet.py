@@ -4,7 +4,7 @@ import GameSettings
 
 class Bullet:
     # 초기화(생성자)
-    def __init__(self, x, y, dir_x, dir_y):
+    def __init__(self, x, y, dir_x, dir_y):     # player.py 에서 보낸 인수 전달받음
         # 기본 총알 이미지 로드, 사이즈
         self.size = 40
         self.bullet_img = pygame.image.load("resource/images/bullet_default.png")

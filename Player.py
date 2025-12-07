@@ -17,10 +17,19 @@ class Player :
         self.map_width = map_width
         self.map_height = map_height
 
-        # 플레이어 기본 위치, 속도 설정
+        # 플레이어 속성
+        self.speed = 1.5
+        self.hp = 100
+        self.maxhp = 100
+
+        # 플레이어 무적
+        self.isInv = False  #무적 상태 확인
+        self.inv_start_time = 0  #무적 시작 시간
+        self.inv_duration = 1000  #무적 지속 시간
+
+        # 플레이어 기본 위치
         self.x = self.map_width // 2
         self.y = self.map_height // 2
-        self.speed = 1.5
 
         # 플레이어 히트박스(사각형)
         self.rect = pygame.Rect(self.x, self.y, self.size, self.size)   #사각형 생성 함수
@@ -28,7 +37,8 @@ class Player :
         
         # 총알 쿨다운 설정
         self.last_shot_time = 0
-        self.shoot_cooldown = 1000
+        self.shoot_cooldown = 800
+
 
     # 플레이어 움직임
     def player_move(self) :
@@ -56,10 +66,16 @@ class Player :
 
     # 플레이어 그리기
     def player_draw(self, screen, offset_x, offset_y):
+
+        # 무적 상태에서 깜빡임
+        if self.isInv == True:
+            if (pygame.time.get_ticks() % 200) < 100:
+                return
+
         draw_x = self.x - offset_x
         draw_y = self.y - offset_y
-
         screen.blit(self.snowman_img, (draw_x, draw_y))
+        
 
     # 플레이어 총알 발사
     def player_shooting(self, bullets_list):
@@ -102,3 +118,23 @@ class Player :
 
                 # 총알 발사 시간을 현재 시간에 맞춤(현재시간으로 초기화)
                 self.last_shot_time = current_time
+    
+    # 데미지를 받을 때
+    def take_damage(self, monster_damage):
+        current_time = pygame.time.get_ticks()
+
+        if not self.isInv :
+            self.hp -= monster_damage
+
+            self.isInv = True           # 데미지를 받은 후 무적 활성화
+            self.inv_start_time = current_time  # 무적 시작 시간을 현재시간으로 지정
+
+
+    # 플레이어 상태를 무적으로 업데이트
+    def update_status(self):
+        
+        if self.isInv == True:
+            current_time = pygame.time.get_ticks()
+
+            if current_time - self.inv_start_time > self.inv_duration:
+                self.isInv = False

@@ -1,5 +1,6 @@
 import pygame
-#from Monster import '몬스터 죽음 확인 메소드'
+from Monster import Monster
+from Player import Player
 
 # 플레이어의 경험치, 레벨 클래스
 class Level :
