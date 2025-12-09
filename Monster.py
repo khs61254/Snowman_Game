@@ -4,7 +4,7 @@ class Monster :
     default_hp = 30
     default_speed = 1
     default_damage = 20
-    default_exp = 20
+    default_exp = 100
 
     def __init__(self, x, y):
         # 몬스터 이미지 로드

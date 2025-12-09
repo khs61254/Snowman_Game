@@ -3,9 +3,10 @@ import sys
 import random
 import math
 import GameSettings
-from Player import Player           # Player 파일의 Player 클래스 가져오기
+from Player import Player       # Player.py 스크립트는 Bullet.py 스크립트를 import 하고있음
 from Monster import Monster
 from Level import Level
+from Skill import Skill_Thunder, Skill_Heal, Skill_Speed
 
 # 설정 초기화
 pygame.init()
@@ -74,6 +75,29 @@ difficult_trigger = False
 #게임 오버 확인
 game_over = False
 
+#스킬 변수, 객체 생성
+player_skills = []
+available_skills = [Skill_Thunder(), Skill_Heal(), Skill_Speed()]
+
+#게임 일시 정지
+level_up_pause = False
+current_options = []
+
+#스킬 카드 UI
+card_width = 300
+card_height = 400
+card_gap = 50
+
+# 카드 3장의 x좌표 계산
+start_x = (GameSettings.SCREEN_WIDTH - (card_width * 3 + card_gap * 2)) // 2
+
+# 카드 사각형 3개 만들기(클릭 박스)
+card_rects = [
+    pygame.Rect(start_x, 200, card_width, card_height),
+    pygame.Rect(start_x + card_width + card_gap, 200, card_width, card_height),
+    pygame.Rect(start_x + (card_width + card_gap) * 2, 200, card_width, card_height)
+]
+
 # 메인 게임 루프
 run = True
 while run:
@@ -85,9 +109,45 @@ while run:
         if event.type == pygame.MOUSEBUTTONDOWN:
             run = False
 
+    #레벨업 일시 정지 상태
+    if level_up_pause:
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            mouse_pos = pygame.mouse.get_pos()
+
+            for i, rect in enumerate(card_rects):
+                if i < len(current_options) and rect.collidepoint(mouse_pos):   #에러방지
+                     
+                    selected_skill = current_options[i] # 선택한 스킬 객체 가져오기
+                    print(f"{selected_skill.name} 선택!")
+
+                    # 스킬 획득 로직
+                    if selected_skill not in player_skills:
+                        player_skills.append(selected_skill) # 새 스킬 추가
+                        
+                        # Speed 같은 패시브는 적용 플래그 초기화 (중복 획득 시 또 적용되게 하려면)
+                        if isinstance(selected_skill, Skill_Speed):
+                            selected_skill.applied = False 
+                    else:
+                        # 이미 있는 스킬이면 강화 (예: 데미지 증가, 힐량 증가 등)
+                        if hasattr(selected_skill, 'damage'):
+                            selected_skill.damage += 20
+                        elif hasattr(selected_skill, 'heal_amount'):
+                            selected_skill.heal_amount += 5
+                    
+                    level_up_pause = False # 게임 재개
+                    break # for문 탈출
+    
+    # 게임 오버 상태거나, 레벨업 퍼즈 상태가 아닐때
+    if not game_over and not level_up_pause:
+        # 보유 스킬 업데이트
+        for skill in player_skills:
+            skill.update(player, monsters_list, offset_x, offset_y)
+            
+
     # 맵 그리기
     screen.fill(GameSettings.BLACK)
     screen.blit(map_img, (0 - offset_x, 0 - offset_y))
+
 
     # 게임 진행중
     if not game_over:
@@ -175,9 +235,13 @@ while run:
                         monster.monster_takeDamage(bullet.damage)
                         bullets_list.remove(bullet)
 
-                        # 몬스터의 사망 확인, 경험치
+                        # 몬스터의 사망 확인, 경험치 획득
                         if monster.hp <= 0 :
-                            level.gain_exp(monster.exp)
+                            is_level_up = level.gain_exp(monster.exp)
+                            if is_level_up:
+                                level_up_pause = True   #레벨업시 퍼즈 발동
+                                pick_count = min(3, len(available_skills))
+                                current_options = random.sample(available_skills, pick_count)
                             monster.isDead = True
                             monster.death_time = pygame.time.get_ticks()
                             break
@@ -191,13 +255,49 @@ while run:
     # 플레이어 그리기
     player.player_draw(screen, offset_x, offset_y)
 
+    # 스킬 이펙트 그리기
+    for skill in player_skills:
+        skill.draw(screen, offset_x, offset_y)
+
     # 레벨 UI 그리기
     level.level_draw(screen)
 
     # 플레이어 체력 UI 그리기
     player.player_hp_draw(screen)
 
+    # 레벨업시 UI 그리기
+    if level_up_pause:
+        overlay = pygame.Surface((GameSettings.SCREEN_WIDTH, GameSettings.SCREEN_HEIGHT))
+        overlay.set_alpha(150)  #반투명
+        overlay.fill((GameSettings.BLACK))
+        screen.blit(overlay, (0, 0))
 
+        title_text = game_font.render("스킬 선택", True, (255, 215, 0))
+        title_rect = title_text.get_rect(center=(GameSettings.SCREEN_WIDTH//2, 100))
+        screen.blit(title_text, title_rect)
+        
+        for i, skill in enumerate(current_options):
+            rect = card_rects[i]    #카드 박스 좌표
+            # 카드 배경
+            pygame.draw.rect(screen, (GameSettings.WHITE), rect)
+            pygame.draw.rect(screen, (GameSettings.BLACK), rect, 3) # 테두리
+            
+            icon_rect = pygame.Rect(rect.x + card_width//2 - 40, rect.y + 40, 80, 80)
+            
+            if skill.icon_image is not None:
+                screen.blit(skill.icon_image, icon_rect)
+            else:
+                pygame.draw.rect(screen, skill.icon_color, icon_rect)
+
+            name_text = sub_font.render(skill.name, True, (0, 0, 0)) 
+            name_rect = name_text.get_rect(center=(rect.centerx, rect.y + 150))
+            screen.blit(name_text, name_rect)
+
+            desc_font = pygame.font.SysFont("malgungothic", 18)
+            desc_text = desc_font.render(skill.desc, True, (50, 50, 50))
+            desc_rect = desc_text.get_rect(center=(rect.centerx, rect.y + 250))
+
+            screen.blit(desc_text, desc_rect)
 
     # 게임 오버(플레이어 사망시)
     if game_over:

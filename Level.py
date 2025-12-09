@@ -20,7 +20,7 @@ class Level :
     # 경험치 획득 함수
     def gain_exp(self, amount) :
         self.exp += amount
-        self.check_level_up()
+        return self.check_level_up()
 
     # 레벨업 함수
     def check_level_up(self):
@@ -33,6 +33,10 @@ class Level :
             #maxhp 증가, 체력 모두 회복
             self.player.maxhp += 20
             self.player.hp = self.player.maxhp
+
+            #레벨업 결과값
+            return True
+        return False
 
             #스킬 선택
 
